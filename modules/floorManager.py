@@ -10,7 +10,7 @@ import math
 
 
 class FloorManager:
-    def __init__(self, size, pos = (0,0), zoom = 1, gridlinesEnabled = True):
+    def __init__(self, drawManager, size, pos = (0,0), zoom = 1, gridlinesEnabled = True):
         self.floors = []
         self.current_floor = -1
         self.draw_gridlines = gridlinesEnabled
@@ -18,6 +18,7 @@ class FloorManager:
         self.width, self.height = size
         self.x, self.y = pos
         self.zoom = zoom
+        self.drawManager = drawManager
     
     def draw(self):
         # draw drawing surface here with a white rect with size self.width, self.height and offset by position. leave room to account for zoom
@@ -52,10 +53,48 @@ class FloorManager:
         current.add_object(object)
 
     def make_gridlines(self, resolution):
-        for x in range(self.width//resolution):
+        for x in range(self.height//resolution):
             self.gridlines_cache.append(Wall((0, (x+1)*resolution), (self.width, (x+1)*resolution), 1, (0.5,0.5,0.5,1)))
         for y in range(self.width//resolution):
             self.gridlines_cache.append(Wall(((y+1)*resolution, 0), ((y+1)*resolution, self.height), 1, (0.5,0.5,0.5,1)))
+
+    def handle_event(self, event):
+        """Handle events from the GUI system (mouse clicks, movements, etc.)."""
+        event_type = event.get('type')
+        
+        if event_type == 'mouse_button':
+            self._handle_mouse_button(event)
+        elif event_type == 'mouse_move':
+            self._handle_mouse_move(event)
+    
+    def _handle_mouse_button(self, event):
+        """Handle mouse button events (clicks on the floor canvas)."""
+        x = event.get('x')
+        y = event.get('y')
+        button = event.get('button')
+        action = event.get('action')
+        
+        # Check if click is within the floor canvas bounds
+        if not self._is_within_canvas(x, y):
+            return
+        
+        # TODO: Implement floor-specific logic (e.g., adding walls, placing objects)
+        # print(f"Floor canvas clicked at ({x}, {y}) with button {button}, action {action}")
+    
+    def _handle_mouse_move(self, event):
+        """Handle mouse movement events."""
+        x = event.get('x')
+        y = event.get('y')
+        
+        # TODO: Implement floor-specific logic (e.g., preview drawing, hover effects)
+    
+    def _is_within_canvas(self, x, y):
+        """Check if coordinates are within the floor canvas bounds."""
+        return (self.x <= x <= self.x + self.width * self.zoom and 
+                self.y <= y <= self.y + self.height * self.zoom)
+    
+    def send_event(self, event):
+        return # gets the event from drawManager.
 
     def draw_surface(self):
         # Draw the drawing surface background at position (self.x, self.y)

@@ -1,16 +1,11 @@
 # start the program and prereq
 import glfw
+import sys
 from OpenGL.GL import *
 
-from modules.floorManager import *
-from modules.wall import *
-from modules.guiManager import *
+from modules.drawManager import *
 
-
-test_floormanager = FloorManager((800, 800))
-test_floormanager.add_new_floor()
-
-test_guimanager = guiManager()
+draw_manager = drawManager()
 
 def main():
     if not glfw.init():
@@ -31,23 +26,48 @@ def main():
     set_2d_projection(fb_width, fb_height)
     glfw.set_framebuffer_size_callback(window, framebuffer_size_callback)
 
+    # forward GLFW mouse events into our GUI system (convert to framebuffer coords)
+    def _window_to_framebuffer(x, y):
+        # glfw cursor positions are in window coordinates; convert to framebuffer pixels
+        fb_w, fb_h = glfw.get_framebuffer_size(window)
+        win_w, win_h = glfw.get_window_size(window)
+        if win_w == 0 or win_h == 0:
+            return int(x), int(y)
+        sx = fb_w / float(win_w)
+        sy = fb_h / float(win_h)
+        return int(x * sx), int(y * sy)
+
+    def mouse_button_cb(win, button, action, mods):
+        cx, cy = glfw.get_cursor_pos(win)
+        fb_x, fb_y = _window_to_framebuffer(cx, cy)
+        event = {'type': 'mouse_button', 'x': fb_x, 'y': fb_y, 'button': button, 'action': action}
+        try:
+            draw_manager.send_events(event)
+        except Exception:
+            pass
+
+    def cursor_pos_cb(win, xpos, ypos):
+        fb_x, fb_y = _window_to_framebuffer(xpos, ypos)
+        event = {'type': 'mouse_move', 'x': fb_x, 'y': fb_y}
+        try:
+            draw_manager.send_events(event)
+        except Exception:
+            pass
+
+    glfw.set_mouse_button_callback(window, mouse_button_cb)
+    glfw.set_cursor_pos_callback(window, cursor_pos_cb)
+
     while not glfw.window_should_close(window):
         ## RENDERING HANDLER ##
         glClear(GL_COLOR_BUFFER_BIT)
         glClearColor(0.77, 0.77, 0.77, 1)
         
 
-        # first draw the grid and stuff for drawing
-
-        test_floormanager.draw()
-
-        # next, draw the ui in order of clicked
-
-        test_guimanager.draw()
+        # tell drawmanager to draw all
+        draw_manager.draw()
 
         ## EVENT HANDLING ##
         glfw.poll_events()
-
 
         ## SWAP BUFFERS ## (no clue what this does)
         glfw.swap_buffers(window)
@@ -78,7 +98,6 @@ def set_2d_projection(width, height):
     glDisable(GL_DEPTH_TEST)
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
 
 def framebuffer_size_callback(window, width, height):
     # When the framebuffer is resized, update viewport and projection
