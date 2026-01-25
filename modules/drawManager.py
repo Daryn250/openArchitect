@@ -18,7 +18,7 @@ class drawManager:
 
     def send_events(self, event):
         self.gui_manager.send_events(event)
-        self.floor_manager.send_events(event)
+        self.floor_manager.handle_event(event)
 
     def init_font(self, file):
         # try to load the font. don't load anything but helvetica 12 for now. evil, i know.

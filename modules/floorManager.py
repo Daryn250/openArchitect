@@ -73,6 +73,8 @@ class FloorManager:
         y = event.get('y')
         button = event.get('button')
         action = event.get('action')
+
+        print(button)
         
         # Check if click is within the floor canvas bounds
         if not self._is_within_canvas(x, y):
@@ -87,6 +89,7 @@ class FloorManager:
         y = event.get('y')
         
         # TODO: Implement floor-specific logic (e.g., preview drawing, hover effects)
+    
     
     def _is_within_canvas(self, x, y):
         """Check if coordinates are within the floor canvas bounds."""
