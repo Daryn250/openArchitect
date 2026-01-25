@@ -54,8 +54,18 @@ def main():
         except Exception:
             pass
 
+    def scroll_cb(win, xoffset, yoffset):
+        cx, cy = glfw.get_cursor_pos(win)
+        fb_x, fb_y = _window_to_framebuffer(cx, cy)
+        event = {'type': 'scroll', 'x': fb_x, 'y': fb_y, 'xoffset': xoffset, 'yoffset': yoffset}
+        try:
+            draw_manager.send_events(event)
+        except Exception:
+            pass
+
     glfw.set_mouse_button_callback(window, mouse_button_cb)
     glfw.set_cursor_pos_callback(window, cursor_pos_cb)
+    glfw.set_scroll_callback(window, scroll_cb)
 
     while not glfw.window_should_close(window):
         ## RENDERING HANDLER ##

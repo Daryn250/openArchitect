@@ -25,7 +25,9 @@ class FloorManager:
         self.draw_surface()
         # draw gridlines here using wall function.
         if self.gridlines_cache==[]:
-            self.make_gridlines(resolution = 50) # 10 px between gridlines
+            # Adjust gridline resolution based on zoom so they maintain consistent screen spacing
+            self.make_gridlines(self.zoom, 50) # 50 px spacing
+            pass
         else:
             for line in self.gridlines_cache: # eventually add culling? maybe.
                 line.draw()
@@ -52,11 +54,12 @@ class FloorManager:
         current = self.floors[self.current_floor]
         current.add_object(object)
 
-    def make_gridlines(self, resolution):
-        for x in range(self.height//resolution):
-            self.gridlines_cache.append(Wall((0, (x+1)*resolution), (self.width, (x+1)*resolution), 1, (0.5,0.5,0.5,1)))
-        for y in range(self.width//resolution):
-            self.gridlines_cache.append(Wall(((y+1)*resolution, 0), ((y+1)*resolution, self.height), 1, (0.5,0.5,0.5,1)))
+    def make_gridlines(self, zoom, spacing): # gridlines are flashing due to being cleared. Fix later.
+        for x in range((self.width//spacing)+1):
+            self.gridlines_cache.append(Wall([self.x+x*(spacing*zoom), 0], [self.x+x*(spacing*zoom), self.height],1))
+        for x in range((self.height//spacing)+1):
+            self.gridlines_cache.append(Wall([0, self.y+x*(spacing*zoom)], [self.width, self.y+x*(spacing*zoom)],1))
+        pass 
 
     def handle_event(self, event):
         """Handle events from the GUI system (mouse clicks, movements, etc.)."""
@@ -66,6 +69,8 @@ class FloorManager:
             self._handle_mouse_button(event)
         elif event_type == 'mouse_move':
             self._handle_mouse_move(event)
+        elif event_type == 'scroll':
+            self._handle_scroll(event)
     
     def _handle_mouse_button(self, event):
         """Handle mouse button events (clicks on the floor canvas)."""
@@ -89,6 +94,35 @@ class FloorManager:
         y = event.get('y')
         
         # TODO: Implement floor-specific logic (e.g., preview drawing, hover effects)
+    
+    def _handle_scroll(self, event):
+        """Handle scroll wheel events (zooming from cursor position)."""
+        x = event.get('x')
+        y = event.get('y')
+        yoffset = event.get('yoffset')
+        
+        
+        # Calculate world position under cursor before zoom
+        world_x = (x - self.x) / self.zoom
+        world_y = (y - self.y) / self.zoom
+        
+        # Adjust zoom based on scroll direction (positive = zoom in, negative = zoom out)
+        zoom_factor = 1.1
+        old_zoom = self.zoom
+        if yoffset > 0:
+            self.zoom *= zoom_factor
+        elif yoffset < 0:
+            self.zoom /= zoom_factor
+        
+        # Clamp zoom to reasonable values
+        self.zoom = max(0.1, min(5.0, self.zoom))
+        
+        # Adjust canvas position to keep the world point under cursor at same screen position
+        self.x = x - world_x * self.zoom
+        self.y = y - world_y * self.zoom
+        
+        # Invalidate gridlines cache so they're redrawn at new zoom level
+        self.gridlines_cache = []
     
     
     def _is_within_canvas(self, x, y):
